@@ -6,14 +6,14 @@
 #include "config.h"
 
 // Sensor poll interval
-#define	QR_READER_SAMPLING_INTERVAL	200
+#define	QR_READER_SAMPLING_INTERVAL	400
 
 // Worker task for QR reader
 void qrReaderTask(void *param)
 {
   (void) param;
 
-  for (;;)
+  while (true)
   {
     tiny_code_reader_results_t results = {};
 
@@ -26,11 +26,14 @@ void qrReaderTask(void *param)
       debug.println("No person sensor results found on the i2c bus");
     }
 
+    // Unlock access to I2C bus
+    _unlock_wire();
+
     // The Sensor sees a QR Code. Send it to Notehub
     if (results.content_length > 0) {
-      debug.print("Found '");
+      debug.print("Found QR Code:");
       debug.print((char*)results.content_bytes);
-      debug.println("'\n");
+      debug.println();
 
       J *req = notecard.newRequest("note.add");
       JAddStringToObject(req, "file", QR_NOTEFILE);
@@ -41,11 +44,10 @@ void qrReaderTask(void *param)
 
       JAddItemToObject(req, "body", body);
       JAddStringToObject(req, "sync", "true");
-      // notecard.sendRequest(req);
+      if (!notecard.sendRequest(req)) {
+        debug.println("Could not send QR Code to Notecard");
+      }
     }
-
-    // Unlock access to I2C bus
-    _unlock_wire();
 
     // Delay for sensor poll interval
     _delay(QR_READER_SAMPLING_INTERVAL);

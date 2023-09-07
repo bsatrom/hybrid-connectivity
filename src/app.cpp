@@ -152,11 +152,11 @@ bool appInit(void)
 
   digitalWrite(LED_BUILTIN, LOW);
 
-	// Create the Monitor Task
-  xTaskCreate(monitorTask, TASKNAME_MONITOR, TASKSTACK_MONITOR, NULL, TASKPRI_MONITOR, NULL);
-
   // Create the QR Reader Task
   xTaskCreate(qrReaderTask, TASKNAME_QR_READER, TASKSTACK_QR_READER, NULL, TASKPRI_QR_READER, NULL);
+
+	// Create the Monitor Task
+  xTaskCreate(monitorTask, TASKNAME_MONITOR, TASKSTACK_MONITOR, NULL, TASKPRI_MONITOR, NULL);
 
   return true;
 }

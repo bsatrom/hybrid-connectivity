@@ -13,9 +13,9 @@
 #define TASKPRI_MONITOR     ( configMAX_PRIORITIES - 4 )        // normal, in the middle
 
 // QR Reader task definition
-#define TASKNAME_QR_READER		"code_reader"
-#define TASKSTACK_QR_READER   4096
-#define TASKPRI_QR_READER     ( configMAX_PRIORITIES - 1 )
+#define TASKNAME_QR_READER		"qrReader"
+#define TASKSTACK_QR_READER   2048
+#define TASKPRI_QR_READER     ( configMAX_PRIORITIES - 2 )
 
 // Notefile/Note definitions
 #define	AIR_NOTEFILE		"air.qo"
