@@ -90,7 +90,7 @@ void monitorTask(void *param)
       JAddNumberToObject(body, FIELD_ALTITUDE, bmeSensor->altitude);
 
       JAddItemToObject(req, "body", body);
-      JAddStringToObject(req, "sync", "true");
+      JAddBoolToObject(req, "sync", true);
       notecard.sendRequest(req);
     }
 
@@ -109,7 +109,7 @@ void monitorTask(void *param)
       JAddNumberToObject(body, FIELD_Z, accelSensor->z);
 
       JAddItemToObject(req, "body", body);
-      JAddStringToObject(req, "sync", "true");
+      JAddBoolToObject(req, "sync", true);
       notecard.sendRequest(req);
     }
 

@@ -6,7 +6,7 @@
 #include "config.h"
 
 // Sensor poll interval
-#define	QR_READER_SAMPLING_INTERVAL	400
+#define	QR_READER_SAMPLING_INTERVAL	200
 
 // Worker task for QR reader
 void qrReaderTask(void *param)
@@ -43,7 +43,7 @@ void qrReaderTask(void *param)
       JAddStringToObject(body, FIELD_CONTENT, (char*)results.content_bytes);
 
       JAddItemToObject(req, "body", body);
-      JAddStringToObject(req, "sync", "true");
+      JAddBoolToObject(req, "sync", true);
       if (!notecard.sendRequest(req)) {
         debug.println("Could not send QR Code to Notecard");
       }
