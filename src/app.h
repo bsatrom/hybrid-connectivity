@@ -7,18 +7,18 @@
 #include <Notecard.h>
 #include <Adafruit_BME680.h>
 #include <Adafruit_LIS3DH.h>
+#include <SFE_MicroOLED.h>
 #include "NoteRTOS.h"
 #include "tiny_code_reader.h"
 
 #pragma once
 
 #define SEALEVELPRESSURE_HPA (1013.25)
-#define LIS3DH_I2C_ADDR 0x18
 
 // Notehub definitions
 #ifdef LOCALDEV
 #define	NOTEHUB_HUB			"brandon.blues.tools"
-#define	NOTEHUB_PRODUCT_UID "com.blues.test.robot:ttc_local"
+#define	NOTEHUB_PRODUCT_UID "com.blues.testrobot2"
 #else
 #define	NOTEHUB_HUB			"-"
 #define	NOTEHUB_PRODUCT_UID	"com.blues.ttc"

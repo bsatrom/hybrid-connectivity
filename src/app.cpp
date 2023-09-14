@@ -16,7 +16,8 @@ uint32_t notecardBootTime = 0;
 
 // Initialize the BME680 and Accelerometer
 Adafruit_BME680 bme;
-Adafruit_LIS3DH lis = Adafruit_LIS3DH();
+Adafruit_LIS3DH accel = Adafruit_LIS3DH();
+MicroOLED oled(-1, 1);
 
 // Forwards
 void refreshEnvironmentVarCache(J *rsp);
@@ -56,7 +57,7 @@ bool appInit(void)
   JAddStringToObject(req, "product", NOTEHUB_PRODUCT_UID);
 	JAddStringToObject(req, "mode", "continuous");
   JAddBoolToObject(req, "sync", true);
-  JAddNumberToObject(req, "inbound", 60);
+  JAddNumberToObject(req, "inbound", 1);
   JAddNumberToObject(req, "outbound", 15);
   notecard.sendRequestWithRetry(req, 5); // 5 seconds
 
@@ -122,6 +123,20 @@ bool appInit(void)
     return false;
   }
 
+  // Notefile Template for Inbound
+  req = notecard.newRequest("note.template");
+  JAddStringToObject(req, "file", INBOUND_NOTEFILE);
+  JAddNumberToObject(req, "port", INBOUND_PORT);
+
+  body = JCreateObject();
+  JAddBoolToObject(body, FIELD_NOTIFY, true);
+
+  JAddItemToObject(req, "body", body);
+  if (!notecard.sendRequest(req)) {
+    debug.println("unable to set inbound template");
+    return false;
+  }
+
   // Load the environment vars for the first time
   rsp = notecard.requestAndResponse(notecard.newRequest("env.get"));
 	if (rsp != NULL) {
@@ -142,21 +157,41 @@ bool appInit(void)
   bme.setIIRFilterSize(BME680_FILTER_SIZE_3);
   bme.setGasHeater(320, 150); // 320*C for 150 ms
 
-  if (!lis.begin(LIS3DH_I2C_ADDR)) {
-    debug.println("LIS3DH sensor not found");
+  if (!accel.begin(LIS3DH_DEFAULT_ADDRESS)) {
+    debug.println("Accelerometer sensor not found");
   } else {
-    debug.println("LIS3DH sensor found!");
+    debug.println("Accelerometer sensor found.");
   }
+  accel.setRange(LIS3DH_RANGE_2_G);   // 2, 4, 8 or 16 G!
 
-  lis.setRange(LIS3DH_RANGE_4_G);   // 2, 4, 8 or 16 G
+  if (!oled.begin()) {
+    debug.println("OLED initialization failed");
+  } else {
+    debug.println("OLED initialization done");
+
+    oled.clear(PAGE);
+    oled.clear(ALL);
+
+    oled.setFontType(0);
+    oled.setCursor(0, 0);
+    oled.println("Hello TTC!");
+
+    oled.display();
+  }
 
   digitalWrite(LED_BUILTIN, LOW);
 
   // Create the QR Reader Task
-  xTaskCreate(qrReaderTask, TASKNAME_QR_READER, TASKSTACK_QR_READER, NULL, TASKPRI_QR_READER, NULL);
+  // xTaskCreate(qrReaderTask, TASKNAME_QR_READER, TASKSTACK_QR_READER, NULL, TASKPRI_QR_READER, NULL);
 
-	// Create the Monitor Task
-  xTaskCreate(monitorTask, TASKNAME_MONITOR, TASKSTACK_MONITOR, NULL, TASKPRI_MONITOR, NULL);
+  // Create in inbound note task
+  xTaskCreate(inboundNoteTask, TASKNAME_INBOUND_NOTE, TASKSTACK_INBOUND_NOTE, NULL, TASKPRI_INBOUND_NOTE, NULL);
+
+	// Create the Environment Task
+  xTaskCreate(environmentTask, TASKNAME_ENVIRONMENT, TASKSTACK_ENVIRONMENT, NULL, TASKPRI_ENVIRONMENT, NULL);
+
+  // Create the Accel Task
+  xTaskCreate(accelTask, TASKNAME_ACCEL, TASKSTACK_ACCEL, NULL, TASKPRI_ACCEL, NULL);
 
   return true;
 }

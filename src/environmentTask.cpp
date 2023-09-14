@@ -17,28 +17,19 @@ typedef struct {
   float altitude;
 } bmeContext;
 
-typedef struct {
-  float x;
-  float y;
-  float z;
-} accelContext;
-
 extern Adafruit_BME680 bme;
-extern Adafruit_LIS3DH lis;
 
 bmeContext *bmeSensor;
-accelContext *accelSensor;
 
 // Last time heartbeat was sent
-uint32_t lastEnvHeartbeatMins = 0;
-uint32_t heartbeatDueMs = 0;
+uint32_t lastEnvEnvironmentHeartbeatMins = 0;
+uint32_t heartbeatEnvironmentDueMs = 0;
 
 // Forwards
 void bmeSensorSample(bmeContext *s);
-void accelSensorSample(accelContext *s);
 
 // Worker task that monitors connected sensors
-void monitorTask(void *param)
+void environmentTask(void *param)
 {
 	(void) param;
 
@@ -52,25 +43,18 @@ void monitorTask(void *param)
 	}
 	memset(bmeSensor, 0, sizeof(bmeContext));
 
-  accelSensor = (accelContext *) _malloc(sizeof(accelContext));
-  if (accelSensor == NULL) {
-    debug.printf("monitor: can't allocate accel sensor context\n");
-    return;
-  }
-  memset(accelSensor, 0, sizeof(accelContext));
-
 	// Loop indefinitely, polling sensors
 	for (;;) {
 
 		// See if a heartbeat is due
-		if (envHeartbeatMins != lastEnvHeartbeatMins) {
-			heartbeatDueMs = 0;
-			lastEnvHeartbeatMins = envHeartbeatMins;
+		if (envHeartbeatMins != lastEnvEnvironmentHeartbeatMins) {
+			heartbeatEnvironmentDueMs = 0;
+			lastEnvEnvironmentHeartbeatMins = envHeartbeatMins;
 		}
 		uint32_t nowMs = _millis();
-		bool heartbeatDue = (nowMs >= heartbeatDueMs);
+		bool heartbeatDue = (nowMs >= heartbeatEnvironmentDueMs);
 		if (heartbeatDue) {
-			heartbeatDueMs = nowMs + (envHeartbeatMins * 60L * 1000L);
+			heartbeatEnvironmentDueMs = nowMs + (envHeartbeatMins * 60L * 1000L);
 		}
 
     // Measure the BME sensor values
@@ -88,25 +72,6 @@ void monitorTask(void *param)
       JAddNumberToObject(body, FIELD_PRESSURE, bmeSensor->pressure);
       JAddNumberToObject(body, FIELD_GAS, bmeSensor->gas_resistance);
       JAddNumberToObject(body, FIELD_ALTITUDE, bmeSensor->altitude);
-
-      JAddItemToObject(req, "body", body);
-      JAddBoolToObject(req, "sync", true);
-      notecard.sendRequest(req);
-    }
-
-    // Measure the accelerometer values
-    accelSensorSample(accelSensor);
-
-    // If a periodic update is required, send it
-    if (heartbeatDue) {
-      J *req = notecard.newRequest("note.add");
-      JAddStringToObject(req, "file", ACCEL_NOTEFILE);
-      JAddNumberToObject(req, "port", ACCEL_PORT);
-      J *body = JCreateObject();
-
-      JAddNumberToObject(body, FIELD_X, accelSensor->x);
-      JAddNumberToObject(body, FIELD_Y, accelSensor->y);
-      JAddNumberToObject(body, FIELD_Z, accelSensor->z);
 
       JAddItemToObject(req, "body", body);
       JAddBoolToObject(req, "sync", true);
@@ -134,24 +99,6 @@ void bmeSensorSample(bmeContext *s) {
     s->pressure = bme.pressure / 100.0;
     s->gas_resistance = bme.gas_resistance / 100.0;
     s->altitude = bme.readAltitude(SEALEVELPRESSURE_HPA);
-  }
-
-  // Unlock access to I2C bus
-  _unlock_wire();
-}
-
-void accelSensorSample(accelContext *s) {
-  sensors_event_t event;
-
-  // Lock access to I2C bus
-  _lock_wire();
-
-  if (!lis.getEvent(&event)) {
-    debug.println("Failed to perform reading from BME680 sensor");
-  } else {
-    s->x = event.acceleration.x;
-    s->y = event.acceleration.y;
-    s->z = event.acceleration.z;
   }
 
   // Unlock access to I2C bus
