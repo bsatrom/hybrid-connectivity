@@ -29,18 +29,26 @@ void inboundNoteTask(void *param)
           if (body != NULL)
           {
               bool notify = JGetBool(body, FIELD_NOTIFY);
+              bool clear = JGetBool(body, FIELD_CLEAR);
+
+              // Clear Display
+              oled.clear(PAGE);
+              oled.clear(ALL);
 
               if (notify)
               {
                 debug.println("Inbound Note: Notify");
 
                 // Write a message to the OLED
-                oled.clear(PAGE);
-                oled.clear(ALL);
                 oled.setCursor(0, 0);
                 oled.println("Got an");
                 oled.println("inbound");
                 oled.println("note!");
+                oled.display();
+              } else if (clear) {
+                debug.println("Inbound Note: Clear");
+
+                // Clear the OLED
                 oled.display();
               }
           }

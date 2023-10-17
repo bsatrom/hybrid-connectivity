@@ -130,11 +130,11 @@ bool appInit(void)
 
   body = JCreateObject();
   JAddBoolToObject(body, FIELD_NOTIFY, true);
+  JAddBoolToObject(body, FIELD_CLEAR, true);
 
   JAddItemToObject(req, "body", body);
   if (!notecard.sendRequest(req)) {
     debug.println("unable to set inbound template");
-    return false;
   }
 
   // Load the environment vars for the first time

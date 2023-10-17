@@ -52,6 +52,7 @@
 #define FIELD_CONTENT     "content"
 
 #define FIELD_NOTIFY      "notify"
+#define FIELD_CLEAR       "clear"
 
 // Environment variable definitions
 #define	VAR_MINUTES				"minutes"		// how often to send a full report
